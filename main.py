@@ -3,6 +3,10 @@ import os.path
 import PySimpleGUI as sg
 
 from api.automate import process_keywords
+import config
+
+if not config.APPLICATION_PASSWORD or not config.SITE_URL or not config.USERNAME:
+    raise Exception("Please Enter Configuration settings!")
 
 layout = [
     [sg.Text("Automatically upload wordpress articles")],
@@ -11,6 +15,8 @@ layout = [
     [sg.Button("Start Uploading", key='UPLOAD'), sg.Cancel()],
     [sg.Text(key='output')]
 ]
+
+
 
 window = sg.Window("upload posts", layout)
 keywords = []

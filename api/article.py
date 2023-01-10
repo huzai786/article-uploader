@@ -10,7 +10,10 @@ from config import APPLICATION_PASSWORD, CATEGORY_ID, USERNAME, SITE_URL
 
 WP_URL = f"{SITE_URL}/wp-json/wp/v2"
 
-
+if CATEGORY_ID == "":
+    CATEGORY_ID = []
+else:
+    CATEGORY_ID = int(CATEGORY_ID)
 
 headers = {"Accept": "application/json", "Content-Type": "application/json"}
 auth = HTTPBasicAuth(USERNAME, APPLICATION_PASSWORD)
