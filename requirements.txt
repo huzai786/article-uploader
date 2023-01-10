@@ -1,0 +1,8 @@
+fake_useragent
+youtube-search-python
+httpx
+lxml==4.9.2
+beautifulsoup4~=4.11.1
+PySimpleGUI
+requests
+jinja2
