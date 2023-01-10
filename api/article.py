@@ -8,11 +8,9 @@ from requests import ReadTimeout, ConnectionError
 
 from config import APPLICATION_PASSWORD, CATEGORY_ID, USERNAME, SITE_URL
 
-APPLICATION_PASSWORD_TEST = "9lkj Vuq7 FvCY ygGH aRlX sKkW"
-USERNAME_TEST = "root"
-
-SITE_URL_TEST = "http://hello-world/"
 WP_URL = f"{SITE_URL}/wp-json/wp/v2"
+
+
 
 headers = {"Accept": "application/json", "Content-Type": "application/json"}
 auth = HTTPBasicAuth(USERNAME, APPLICATION_PASSWORD)
