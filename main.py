@@ -34,8 +34,9 @@ while True:
             sg.popup_error("File Not Found!")
             continue
 
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
+
         keywords = [i.strip('\n') for i in data]
 
         print("found:", len(keywords), "keywords")
