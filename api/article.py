@@ -4,7 +4,7 @@ from typing import List
 
 import jinja2
 from requests.auth import HTTPBasicAuth
-from requests import ReadTimeout, ConnectionError
+from requests import ReadTimeout, ConnectionError, RequestException
 
 from config import APPLICATION_PASSWORD, CATEGORY_ID, USERNAME, SITE_URL
 
@@ -19,7 +19,6 @@ headers = {"Accept": "application/json", "Content-Type": "application/json"}
 auth = HTTPBasicAuth(USERNAME, APPLICATION_PASSWORD)
 environment = jinja2.Environment()
 template = environment.from_string("""
-    <h1>{{ query }}</h1>
     {% for link in links %}
         <article>
             <div>
@@ -57,7 +56,6 @@ def add_article(title: str, content: str, client):
             "format": "standard",
             "categories": CATEGORY_ID,
         }
-        print(title)
         res = client.post(WP_URL + '/posts', auth=auth, headers=headers, json=data, timeout=20)
         if res.status_code == 201:
             return True
@@ -69,6 +67,25 @@ def add_article(title: str, content: str, client):
         print("no internet!", e)
         sys.exit()
 
+def get_last_kw(client):
+    try:
+        data = {}
+        if CATEGORY_ID:
+            data["categories"] = CATEGORY_ID
 
+        res = client.get(WP_URL + '/posts', auth=auth, headers=headers, timeout=20, json=data)
+        if res.status_code == 200:
+            if isinstance(res.json(), list) and len(res.json()) > 0:
+                title = res.json()[0]["title"]["rendered"]
+                print("Last Article Keyword: ", title)
+                return title
+            else:
+                return None
 
+    except ReadTimeout:
+        return None
+
+    except RequestException as e:
+        print(e)
+        return None
 
