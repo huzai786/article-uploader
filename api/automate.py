@@ -1,13 +1,8 @@
-import json
-import time
-
 import requests
-
-from api.article import html_format_data, add_article, get_last_kw
+import PySimpleGUI as sg
+from api.article import html_format_data, add_article, current_keywords_posted
 from api.extract import extract_youtube
 
-from typing import Generator
-from config import CATEGORY_ID
 sess = requests.Session()
 
 def process(client, keyword):
@@ -23,57 +18,44 @@ def process(client, keyword):
         return False
 
 
-def process_keywords(DB_NAME):
-    with open(DB_NAME, 'r', encoding='utf-8') as f:
-        kws = json.load(f)
-    last_keyword = get_last_kw(sess)
-    print(last_keyword)
-    completed: list = kws.get("COMPLETED")
-    uncompleted: list = kws.get("UNCOMPLETED")
-    try:
-        last_keyword_index = uncompleted.index(last_keyword)
-    except ValueError:
-        last_keyword_index = 0
+def process_keywords(file_path, window: sg.Window):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        keywords_left = [i.strip() for i in f.readlines()]
 
-    if last_keyword_index > 0:
-        completed.extend(uncompleted[:last_keyword_index + 1])
-        for i in reversed(range(0, last_keyword_index + 1)):
-            uncompleted.pop(i)
+    window["-OUTPUT-"].update("Getting current Keywords from the wordpress api. (Don't stop the script)" + '\n', append=True, text_color="black")
+    uploaded_keywords = current_keywords_posted()
 
-        update_keywords(DB_NAME, completed, uncompleted)
+    window["-OUTPUT-"].update("Removing already uploaded keywords.  (Don't stop the script)" + '\n', append=True, text_color="black")
+    for k in uploaded_keywords:
+        try:
+            keywords_left.remove(k)
+        except ValueError:
+            pass
 
-    item_len = len(uncompleted)
-    i = 0
-    while i <= item_len:
-        keyword = uncompleted[i]
-        display_status(keyword, i, item_len - i)
-        status = process(sess, keyword)
-        if not status:
-            uncompleted.append(keyword)
-            time.sleep(0.5)
-        i += 1
+    window["-OUTPUT-"].update("Saving keywords  (Don't stop the script)" + '\n', append=True, text_color="black")
+    with open(file_path, 'w', encoding='utf-8') as f:
+        for k in keywords_left:
+            f.write(k + '\n')
 
+    window["-OUTPUT-"].update("You can stop the script now." + '\n', append=True, text_color="black")
+    keywords_length = len(keywords_left)
+    for i, kw in enumerate(keywords_left):
+        if process(sess, kw):
+            keywords_length -= 1
+        s = display_status(kw, i, keywords_length, process)
+        window["-OUTPUT-"].update(s + '\n', append=True, text_color="black")
+    return
 
-def update_keywords(DB_NAME, completed_words, uncompleted_words):
-    with open(DB_NAME, 'w', encoding='utf-8') as f:
-        kws = {"COMPLETED": completed_words, "UNCOMPLETED": uncompleted_words}
-        json.dump(kws, f)
-
-def save_keywords(db_name: str, keywords: Generator):
-    dct = {"UNCOMPLETED": [], "COMPLETED": []}
-    for kw in keywords:
-        dct.get("UNCOMPLETED").append(kw)
-    with open(db_name, 'w', encoding='utf-8') as f:
-        json.dump(dct, f)
-
-
-def display_status(keyword, current_completed_count, uncompleted_count):
-    print(f"""
+def display_status(keyword, current_completed_count, total_keywords, posted):
+    output_string = f"""
     |===============================================|
-    |   Keyword Left:  {uncompleted_count}
+    |   Total Keywords Left:  {total_keywords}
     |   Current Status: {current_completed_count + 1} Completed!
-    |   Current keyword: {keyword}                  
+    |   Current keyword: {keyword}        
+    |   Posted:  {"Yes" if posted else "No"}          
     |===============================================|
-    """)
+    """
+    return output_string
+
 
 
